@@ -1283,7 +1283,14 @@ class wasm_processor_t(idaapi.processor_t):
                 'feature': op.flags,
                 'cmt': idawasm.const.WASM_OPCODE_DESCRIPTIONS.get(op.id),
             }
-            clean_mnem = op.mnemonic.encode('ascii').replace('.', '_').replace('/', '_').upper()
+            if not isinstance(op.mnemonic, str):
+                print(f"Unexpected type: {type(op.mnemonic)}")
+                continue
+
+            clean_mnem = op.mnemonic.replace('.', '_').replace('/', '_').upper().encode('ascii')
+            print(f"Processing mnemonic: {op.mnemonic} -> {clean_mnem}")
+            if isinstance(clean_mnem, bytes):
+                clean_mnem = clean_mnem.decode('utf-8')
             # the itype constant value must be contiguous, which sucks, because its not the op.id value.
             setattr(self, 'itype_' + clean_mnem, i)
 
