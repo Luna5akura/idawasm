@@ -18,7 +18,8 @@ import netnode
 import idc
 import idaapi
 import idautils
-
+import ida_funcs
+import ida_ua
 # from this project
 import idawasm.const
 import idawasm.common
@@ -479,7 +480,7 @@ class wasm_processor_t(idaapi.processor_t):
         buf = []
         for ea in idautils.Segments():
             # assume all the segments are contiguous, which is what our loader does
-            buf.append(idc.GetManyBytes(idc.SegStart(ea), idc.SegEnd(ea) - idc.SegStart(ea)))
+            buf.append(idc.get_bytes(idc.get_segm_start(ea), idc.get_segm_end(ea) - idc.get_segm_start(ea)))
 
         self.buf = b''.join(buf)
         self.sections = list(wasm.decode.decode_module(self.buf))
@@ -512,10 +513,10 @@ class wasm_processor_t(idaapi.processor_t):
         for function in self.functions.values():
             name = function['name'].encode('utf-8')
             if 'offset' in function:
-                idc.MakeName(function['offset'], name)
+                idc.set_name(function['offset'], name, idc.SN_CHECK)
                 # notify_emu will be invoked from here.
-                idc.MakeCode(function['offset'])
-                idc.MakeFunction(function['offset'], function['offset'] + function['size'])
+                idc.create_insn.(function['offset'])
+                ida_funcs.add_func(function['offset'], function['offset'] + function['size'])
 
             if function.get('exported'):
                 # TODO: this should really be done in the loader.
@@ -759,7 +760,7 @@ class wasm_processor_t(idaapi.processor_t):
         '''
 
         # note: `next` may be None if invalid.
-        next = idautils.DecodeInstruction(insn.ea + insn.size)
+        next = ida_ua.decode_insn(insn.ea + insn.size)
 
         # add drefs to globals
         for op in insn.ops:
@@ -1110,7 +1111,7 @@ class wasm_processor_t(idaapi.processor_t):
             # warning: py2.7-specific
             # can't usually just cast the bytearray to a string without explicit decode.
             # assumption: instruction will be less than 0x10 bytes.
-            buf = str(bytearray(idc.GetManyBytes(insn.ea, 0x10)))
+            buf = str(bytearray(idc.get_bytes(insn.ea, 0x10)))
         else:
             # single byte instruction
 
