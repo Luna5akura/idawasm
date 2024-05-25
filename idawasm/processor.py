@@ -515,7 +515,7 @@ class wasm_processor_t(idaapi.processor_t):
             if 'offset' in function:
                 idc.set_name(function['offset'], name, idc.SN_CHECK)
                 # notify_emu will be invoked from here.
-                idc.create_insn.(function['offset'])
+                idc.create_insn(function['offset'])
                 ida_funcs.add_func(function['offset'], function['offset'] + function['size'])
 
             if function.get('exported'):
@@ -760,7 +760,7 @@ class wasm_processor_t(idaapi.processor_t):
         '''
 
         # note: `next` may be None if invalid.
-        next = ida_ua.decode_insn(insn.ea + insn.size)
+        next = idautils.DecodeInstruction(insn.ea + insn.size)
 
         # add drefs to globals
         for op in insn.ops:
@@ -1111,13 +1111,14 @@ class wasm_processor_t(idaapi.processor_t):
             # warning: py2.7-specific
             # can't usually just cast the bytearray to a string without explicit decode.
             # assumption: instruction will be less than 0x10 bytes.
-            buf = str(bytearray(idc.get_bytes(insn.ea, 0x10)))
+            buf = idc.get_bytes(insn.ea, 0x10)
         else:
             # single byte instruction
 
             # warning: py2.7-specific
-            buf = str(bytearray([opb]))
+            buf = bytes([opb])
 
+        # decode instruction operands.
         bc = next(wasm.decode.decode_bytecode(buf))
         for _ in range(1, bc.len):
             # consume any additional bytes.
